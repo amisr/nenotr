@@ -768,7 +768,7 @@ Requires a configuration file containing the following example format:
 #optional variables to use in substitutions below
 EXPNAME=20171003.001
 INTEG=20sec
-[NEPOW_OPTIONS]
+[NENOTR_OPTIONS]
 #number of seconds of data to integrate
 Recs2integrate=20
 #use mean or median
