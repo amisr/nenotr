@@ -10,6 +10,8 @@ import numpy as np
 from datetime import datetime
 import tempfile
 import configparser as ConfigParser
+import traceback
+import sys
 
 from .repack import Repackh5
 from .datahandler import DataHandler
@@ -678,6 +680,9 @@ class CalcNeNoTr(object):
         except ImportError as e:
             print("Plotting failed: %s" % str(e))
             pass
+        except Exception as e:
+            print("Plotting failed: %s" % str(e))
+            print(''.join(traceback.format_exception(*sys.exc_info())))
         
         print("Done!")
 
