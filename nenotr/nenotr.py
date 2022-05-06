@@ -12,7 +12,9 @@ import tempfile
 import configparser as ConfigParser
 import traceback
 import sys
-
+import argparse
+from .plot_nenotr import do_plots
+from .make_nenotr_plots import replot_pcolor_all
 from .repack import Repackh5
 from .datahandler import DataHandler
 
@@ -573,117 +575,117 @@ class CalcNeNoTr(object):
         return time
 
 
-    def run(self):
-        # First check if output file is able to be created
-        temp_file = tempfile.mktemp()
+    def run(self, do_calc = True, plot_type = "0"):
+
         output_file = self.config['output']['output_name']
 
-        # Run the calculator and write output to a file
-        output = self.calculate_nenotr()
+        if do_calc:
+            # First check if output file is able to be created
+            temp_file = tempfile.mktemp()
+            # Run the calculator and write output to a file
+            output = self.calculate_nenotr()
 
-        # get Site information
-        site = self.get_site()
-        # get Time information
-        time = self.get_time()
+            # get Site information
+            site = self.get_site()
+            # get Time information
+            time = self.get_time()
 
-        # Get current date and time
-        date = datetime.utcnow()
-        processing_time = date.strftime("%a, %d %b %Y %H:%M:%S +0000")
+            # Get current date and time
+            date = datetime.utcnow()
+            processing_time = date.strftime("%a, %d %b %Y %H:%M:%S +0000")
 
-        # Write the output
-        # set up the output file
-        print("Writing data to file...")
-        with tables.open_file(temp_file,'w') as h5:
-            for h5path in h5paths:
-                group_path, group_name = os.path.split(h5path[0])
-                h5.create_group(group_path,group_name,title=h5path[1],createparents=True)
+            # Write the output
+            # set up the output file
+            print("Writing data to file...")
+            with tables.open_file(temp_file,'w') as h5:
+                for h5path in h5paths:
+                    group_path, group_name = os.path.split(h5path[0])
+                    h5.create_group(group_path,group_name,title=h5path[1],createparents=True)
 
-            node_path = '/ProcessingParams'
-            h5.create_array(node_path,'AeuRx',output['aeurx'],createparents=True)
-            h5.create_array(node_path,'AeuTotal',output['aeutotal'],createparents=True)
-            h5.create_array(node_path,'AeuTx',output['aeutx'],createparents=True)
-            h5.create_array(node_path,'BaudLength',output['baudlength'],createparents=True)
-            h5.create_array(node_path,'ProcessingTimeStamp',np.array(processing_time),createparents=True)
-            h5.create_array(node_path,'PulseLength',output['pulsewidth'],createparents=True)
-            h5.create_array(node_path,'RxFrequency',output['rxfreq'],createparents=True)
-            h5.create_array(node_path,'TxFrequency',output['txfreq'],createparents=True)
-            h5.create_array(node_path,'TxPower',output['txpower'],createparents=True)
+                node_path = '/ProcessingParams'
+                h5.create_array(node_path,'AeuRx',output['aeurx'],createparents=True)
+                h5.create_array(node_path,'AeuTotal',output['aeutotal'],createparents=True)
+                h5.create_array(node_path,'AeuTx',output['aeutx'],createparents=True)
+                h5.create_array(node_path,'BaudLength',output['baudlength'],createparents=True)
+                h5.create_array(node_path,'ProcessingTimeStamp',np.array(processing_time),createparents=True)
+                h5.create_array(node_path,'PulseLength',output['pulsewidth'],createparents=True)
+                h5.create_array(node_path,'RxFrequency',output['rxfreq'],createparents=True)
+                h5.create_array(node_path,'TxFrequency',output['txfreq'],createparents=True)
+                h5.create_array(node_path,'TxPower',output['txpower'],createparents=True)
 
-            node_path = '/Site'
-            h5.create_array(node_path,'Altitude',site['altitude'],createparents=True)
-            h5.create_array(node_path,'Code',site['code'],createparents=True)
-            h5.create_array(node_path,'Latitude',site['latitude'],createparents=True)
-            h5.create_array(node_path,'Longitude',site['longitude'],createparents=True)
-            h5.create_array(node_path,'Name',site['name'],createparents=True)
+                node_path = '/Site'
+                h5.create_array(node_path,'Altitude',site['altitude'],createparents=True)
+                h5.create_array(node_path,'Code',site['code'],createparents=True)
+                h5.create_array(node_path,'Latitude',site['latitude'],createparents=True)
+                h5.create_array(node_path,'Longitude',site['longitude'],createparents=True)
+                h5.create_array(node_path,'Name',site['name'],createparents=True)
 
-            node_path = '/NeFromPower'
-            h5.create_array(node_path,'Altitude',output['altitude'],createparents=True)
-            h5.create_array(node_path,'Range',output['range'],createparents=True)
-            h5.create_array(node_path,'Ne_NoTr',output['density'],createparents=True)
-            h5.create_array(node_path,'errNe_NoTr',output['edensity'],createparents=True)
-            h5.create_array(node_path,'SNR',output['snr'],createparents=True)
-            h5.create_array(node_path,'errSNR',output['esnr'],createparents=True)
+                node_path = '/NeFromPower'
+                h5.create_array(node_path,'Altitude',output['altitude'],createparents=True)
+                h5.create_array(node_path,'Range',output['range'],createparents=True)
+                h5.create_array(node_path,'Ne_NoTr',output['density'],createparents=True)
+                h5.create_array(node_path,'errNe_NoTr',output['edensity'],createparents=True)
+                h5.create_array(node_path,'SNR',output['snr'],createparents=True)
+                h5.create_array(node_path,'errSNR',output['esnr'],createparents=True)
 
-            node_path = '/Time'
-            h5.create_array(node_path,'Day',time['day'],createparents=True)
-            h5.create_array(node_path,'Month',time['month'],createparents=True)
-            h5.create_array(node_path,'Year',time['year'],createparents=True)
-            h5.create_array(node_path,'doy',time['doy'],createparents=True)
-            h5.create_array(node_path,'UnixTime',time['unixtime'],createparents=True)
+                node_path = '/Time'
+                h5.create_array(node_path,'Day',time['day'],createparents=True)
+                h5.create_array(node_path,'Month',time['month'],createparents=True)
+                h5.create_array(node_path,'Year',time['year'],createparents=True)
+                h5.create_array(node_path,'doy',time['doy'],createparents=True)
+                h5.create_array(node_path,'UnixTime',time['unixtime'],createparents=True)
 
-            # beamcodes
-            h5.create_array('/','BeamCodes',output['bmcodes'],createparents=True)
+                # beamcodes
+                h5.create_array('/','BeamCodes',output['bmcodes'],createparents=True)
 
-            # radar mode
-            h5.create_array('/','RadarMode',self.mode_name,createparents=True)
+                # radar mode
+                h5.create_array('/','RadarMode',self.mode_name,createparents=True)
 
-        # Add calibration information
-        print("Adding calibration information...")
-        if self.calibrated:
-            cal_file = self.config['input']['ksys_file']
-            cal_method = self.config['input']['calibration_method']
-        else:
-            cal_file = 'None'
-            cal_method = 'uncalibrated'
-        cal_data = self.ksys
-        self.add_calibration_info(temp_file,cal_data,cal_file,cal_method)
+            # Add calibration information
+            print("Adding calibration information...")
+            if self.calibrated:
+                cal_file = self.config['input']['ksys_file']
+                cal_method = self.config['input']['calibration_method']
+            else:
+                cal_file = 'None'
+                cal_method = 'uncalibrated'
+            cal_data = self.ksys
+            self.add_calibration_info(temp_file,cal_data,cal_file,cal_method)
 
-        # Add configuration information
-        print("Adding configuration information...")
-        rawfiles = [x.filelist for x in self.datahandlers]
-        self.write_config_info(temp_file,rawfiles)
+            # Add configuration information
+            print("Adding configuration information...")
+            rawfiles = [x.filelist for x in self.datahandlers]
+            self.write_config_info(temp_file,rawfiles)
 
-        with tables.open_file(temp_file,'r+') as h5:
-            for key in h5attribs.keys():
-                for attr in h5attribs[key]:
-                    # print 
-                    h5.set_node_attr(key,attr[0],attr[1])
-                    # try:  h5.set_node_attr(key,attr[0],attr[1])
-                    # except: ''
+            with tables.open_file(temp_file,'r+') as h5:
+                for key in h5attribs.keys():
+                    for attr in h5attribs[key]:
+                        # print 
+                        h5.set_node_attr(key,attr[0],attr[1])
+                        # try:  h5.set_node_attr(key,attr[0],attr[1])
+                        # except: ''
 
-        # repack the file with compression
-        print("Repacking the file with compression...")
-        repack = Repackh5(temp_file,output_file)
-        repack.repack()
-        # remove the temporary file
-        print("Cleaning up...")
-        os.remove(temp_file)
+            # repack the file with compression
+            print("Repacking the file with compression...")
+            repack = Repackh5(temp_file,output_file)
+            repack.repack()
+            # remove the temporary file
+            print("Cleaning up...")
+            os.remove(temp_file)
         print("Making plots...")
         try:
-            from .make_nenotr_plots import replot_pcolor_all
             output_dir = self.config['output']['output_path']
             dirname = 'plots_nenotr_' + self.config['default']['integ']
             plots_dir = os.path.join(output_dir,dirname)
-            if not os.path.exists(plots_dir):
-                os.makedirs(plots_dir)
-            replot_pcolor_all(output_file,saveplots=1,opath=plots_dir)
-        except ImportError as e:
-            print("Plotting failed: %s" % str(e))
-            pass
+            os.makedirs(plots_dir, exist_ok=True)
+            if plot_type == "0":
+                replot_pcolor_all(output_file,saveplots=1,opath=plots_dir)
+            elif plot_type == "1":
+                do_plots(output_file,plots_dir)
         except Exception as e:
             print("Plotting failed: %s" % str(e))
             print(''.join(traceback.format_exception(*sys.exc_info())))
-        
+
         print("Done!")
 
 
@@ -798,16 +800,21 @@ OUTPUT_NAME=%%(OUTPUT_PATH)s/%%(EXPNAME)s_nenotr_%%(INTEG)s.h5
 
 # a function to run this file as a script
 def main():
-    from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
     # Build the argument parser tree
-    parser = ArgumentParser(description=config_file_help,
-                            formatter_class=RawDescriptionHelpFormatter)
-    arg = parser.add_argument('config_file',help='A configuration file.')
-    
+    parser = argparse.ArgumentParser(description=config_file_help,
+                            formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('config_file',help='A configuration file.')
+    parser.add_argument('--only_plot', action=argparse.BooleanOptionalAction,
+            help='Read an existing file and only replot.')
+    parser.add_argument('--plot_type', default='0',
+            help='0: original plot routine, 1: shared x axis.')
     args = vars(parser.parse_args())
     nenotr = CalcNeNoTr(args['config_file'])
-    nenotr.run()
+    if args['only_plot']:
+        nenotr.run(do_calc=False, plot_type = args['plot_type'])
+    else:
+        nenotr.run(do_calc=True, plot_type = args['plot_type'])
 
 
 
