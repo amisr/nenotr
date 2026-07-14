@@ -332,13 +332,15 @@ class CalcNeNoTr(object):
                 radarmode = parser.get(filekey,'name')
             elif 'Name' in parser[filekey].keys():
                 radarmode = parser.get(filekey,'Name')
+
         except Exception as e:
             print("Could not determine mode name because: %s" % (str(e)))
             print("Defaulting to 'unknown'.")
-            try:
-                radarmode=bytes('unknown')         #python2
-            except:
-                radarmode=bytes('unknown','utf-8') #python3
+            radarmode = 'unknown'
+        try:
+            radarmode=bytes(radarmode)         #python2
+        except:
+            radarmode=bytes(radarmode,'utf-8') #python3
 
         return radarmode
 
