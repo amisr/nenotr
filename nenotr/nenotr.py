@@ -5,6 +5,7 @@
 import re
 import os
 import glob
+import h5py
 import tables
 import numpy as np
 from datetime import datetime
