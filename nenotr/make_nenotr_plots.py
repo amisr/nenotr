@@ -5,7 +5,8 @@ import tables
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot
-from matplotlib import cm
+#from matplotlib import cm
+import matplotlib as mpl
 import matplotlib.dates as mdates
 from datetime import datetime
 from datetime import timezone
@@ -93,7 +94,7 @@ def pcolor_plot(x,y,data,cax,xlim,ylim,xl,yl,title,text,bmcodes,save_fig_name=No
 
     # Colormap to use.
     cmap='jet'
-    cmap_to_use = cm.get_cmap(cmap)
+    cmap_to_use = mpl.colormaps.get_cmap(cmap)
     cmap_to_use.set_bad('w',0)
 
     # Then set up some x-axis time formatting that is common to all of the
@@ -110,7 +111,8 @@ def pcolor_plot(x,y,data,cax,xlim,ylim,xl,yl,title,text,bmcodes,save_fig_name=No
         formatter   = mdates.DateFormatter("%H:%M")
 
     # Convert times to from epoch to numbers
-    datetime_obj = datetime.fromtimestamp(x, tz=timezone.utc)
+    datetime_obj = [datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                    for timestamp in x]
     x = mdates.date2num(datetime_obj)
     #x = mdates.epoch2num(x)
     xlim0_dt_obj = datetime.fromtimestamp(xlim[0], tz=timezone.utc)
@@ -236,6 +238,7 @@ def pcolor_plot(x,y,data,cax,xlim,ylim,xl,yl,title,text,bmcodes,save_fig_name=No
             else:
                 output_name = save_fig_name
 
+            print(f"Saving file {output_name}")
             fig.savefig(output_name)
 
         # To help limit RAM usage, clear the figure from memory after
