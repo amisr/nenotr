@@ -329,18 +329,18 @@ class CalcNeNoTr(object):
             else:
                 raise
             if 'name' in parser[filekey].keys():
-                expname = parser.get(filekey,'name')
+                radarmode = parser.get(filekey,'name')
             elif 'Name' in parser[filekey].keys():
-                expname = parser.get(filekey,'Name')
+                radarmode = parser.get(filekey,'Name')
         except Exception as e:
             print("Could not determine mode name because: %s" % (str(e)))
             print("Defaulting to 'unknown'.")
             try:
-                expname=bytes('unknown')         #python2
+                radarmode=bytes('unknown')         #python2
             except:
-                expname=bytes('unknown','utf-8') #python3
+                radarmode=bytes('unknown','utf-8') #python3
 
-        return expname
+        return radarmode
 
 
     @staticmethod
@@ -596,7 +596,7 @@ class CalcNeNoTr(object):
         time = dict()
         keys = ['day','month','year','doy','unixtime']
         for key in keys:
-            time[key] = np.zeros(time_shape,dtype=np.int)
+            time[key] = np.zeros(time_shape,dtype=np.int64)
 
         for i,pair in enumerate(self.integration_periods):
             time['day'][i,:]   = np.array([pair[0].day,pair[1].day])
