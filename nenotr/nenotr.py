@@ -9,7 +9,12 @@ import tables
 import numpy as np
 from datetime import datetime
 import tempfile
-import configparser as ConfigParser
+#import configparser as ConfigParser
+try:
+        import configparser  # Python 3
+except ImportError:
+        import ConfigParser as configparser  # Python 2
+
 import traceback
 import sys
 import argparse
@@ -133,11 +138,21 @@ class CalcNeNoTr(object):
     def __load_amb_from_data(self):
         fname = self.datahandlers[0].filelist[0]
         amb_path = "%s/Data/" % self.datahandlers[0].nenotr_mode
-        
+
+        print(amb_path)
         with tables.open_file(fname,'r') as h5:
             node = h5.get_node(amb_path)
-            bandwidth = node.Ambiguity.Bandwidth.read()
-            wlag =node.Ambiguity.Wlag.read()
+            if type(node.Ambiguity) == tables.array.Array:
+                tmp_Ambiguity = node.Ambiguity.read()
+                assert tmp_Ambiguity.size == 1
+                assert type(tmp_Ambiguity.item()) == bytes
+                amb_address = tmp_Ambiguity.item().decode('latin') # '/Setup/Ambiguity/B13_10_5'
+                amb_node = h5.get_node(amb_address)
+                bandwidth = amb_node.Bandwidth.read()
+                wlag = amb_node.Wlag.read()
+            else:
+                bandwidth = node.Ambiguity.Bandwidth.read()
+                wlag =node.Ambiguity.Wlag.read()
 
         return {'bandwidth': bandwidth, 'wlag': wlag}
 
@@ -167,7 +182,7 @@ class CalcNeNoTr(object):
                                     }
 
         # read the config file and convert to dictionary
-        parser = ConfigParser.ConfigParser()
+        parser = configparser.ConfigParser()
         parser.read(self.configfile)
         parsed_config = self.__config_to_dict_helper(parser)
 
@@ -292,12 +307,31 @@ class CalcNeNoTr(object):
         print("fname in get_mode_name",fname)
         try:
             with tables.open_file(fname) as h5file:
-                expname = h5file.get_node('/Setup/Experimentfile').read()
-            print("type(expname)",type(expname))
-            if type(expname)==np.ndarray:
-                expname=expname[0]
-            print("type(expname)",type(expname))
-            expname=expname.splitlines()[1].split(b'=')[1] # byte-like obj. python3
+                experimentfile = h5file.get_node('/Setup/Experimentfile').read()
+            if type(experimentfile)==np.ndarray:
+                if experimentfile.size == 1:
+                    experimentfile=experimentfile.item()
+                else:
+                    experimentfile=experimentfile[0]
+            else:
+                raise
+            # example
+            # b'',
+            # b'[file]',
+            # b'name=IPY27_Tracking_bc_v04',
+            # b'description....
+            parser = configparser.ConfigParser(strict=False)
+            parser.read_string(experimentfile.decode('latin'))
+            if 'file' in parser.keys():
+                filekey = 'file'
+            elif 'File' in parser.keys():
+                filekey = 'File'
+            else:
+                raise
+            if 'name' in parser[filekey].keys():
+                expname = parser.get(filekey,'name')
+            elif 'Name' in parser[filekey].keys():
+                expname = parser.get(filekey,'Name')
         except Exception as e:
             print("Could not determine mode name because: %s" % (str(e)))
             print("Defaulting to 'unknown'.")
