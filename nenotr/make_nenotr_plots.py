@@ -6,8 +6,9 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot
 from matplotlib import cm
-import matplotlib.dates
+import matplotlib.dates as mdates
 from datetime import datetime
+from datetime import timezone
 
 
 def make_grid_of_axes(nrows,ncols,dx=0.02,dy=0.05,figsz=(14,10)):
@@ -101,16 +102,21 @@ def pcolor_plot(x,y,data,cax,xlim,ylim,xl,yl,title,text,bmcodes,save_fig_name=No
     num_half_days   = num_hours / 12.0
     if num_half_days > 0.5:
         interval    = int(np.ceil(num_hours / 12.0))
-        locator     = matplotlib.dates.HourLocator(interval=interval)
-        formatter   = matplotlib.dates.DateFormatter("%H")
+        locator     = mdates.HourLocator(interval=interval)
+        formatter   = mdates.DateFormatter("%H")
     elif num_half_days < 0.5:
         interval    = int(np.ceil(num_hours * 60.0 / 5.0 / sc))
-        locator     = matplotlib.dates.MinuteLocator(interval=interval)
-        formatter   = matplotlib.dates.DateFormatter("%H:%M")
+        locator     = mdates.MinuteLocator(interval=interval)
+        formatter   = mdates.DateFormatter("%H:%M")
 
     # Convert times to from epoch to numbers
-    x = matplotlib.dates.epoch2num(x)
-    xlim = [matplotlib.dates.epoch2num(xlim[0]),matplotlib.dates.epoch2num(xlim[-1])]
+    datetime_obj = datetime.fromtimestamp(x, tz=timezone.utc)
+    x = mdates.date2num(datetime_obj)
+    #x = mdates.epoch2num(x)
+    xlim0_dt_obj = datetime.fromtimestamp(xlim[0], tz=timezone.utc)
+    xlim1_dt_obj = datetime.fromtimestamp(xlim[-1], tz=timezone.utc)
+    #xlim = [mdates.epoch2num(xlim[0]),mdates.epoch2num(xlim[-1])]
+    xlim = [mdates.date2num(xlim0_dt_obj),mdates.date2num(xlim1_dt_obj)]
 
     # How many beams do we have left to plot?
     if remaining_beams_to_plot > max_beams:
